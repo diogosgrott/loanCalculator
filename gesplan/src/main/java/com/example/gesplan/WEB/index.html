@@ -182,7 +182,6 @@
             method: 'GET',
             data: formParam,
             success: function (response) {
-              console.log(response.calculationDataMap)
               Object.values(response.calculationDataMap).forEach(data => {
                 var date = new Date(data.time)
                 date.setMinutes(date.getMinutes() + date.getTimezoneOffset())
@@ -213,7 +212,10 @@
               })
             },
             error: function (err) {
-              console.error(err)
+              row = `<tr>
+                <td>${err}</td>
+                </tr>`
+              $('#table-body').append(row)
             }
           })
         })
