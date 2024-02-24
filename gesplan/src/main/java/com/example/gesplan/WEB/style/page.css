@@ -1,0 +1,20 @@
+:root {
+  font-size: 80%;
+
+  --lightBlue: #4f93f1;
+  --white: #ffffff;
+}
+
+body {
+  background-size: cover;
+}
+
+.table-head {
+  background-color: var(--lightBlue);
+  color: var(--white);
+}
+
+th,
+td {
+  text-align: center;
+}

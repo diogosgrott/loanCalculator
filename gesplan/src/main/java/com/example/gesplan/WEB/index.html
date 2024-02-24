@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+      integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style/page.css" />
+    <link
+      rel="shortcut icon"
+      href="imgs/favicon-16x16.png"
+      type="image/x-icon"
+    />
+    <title>GESPLAN</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="mt-3">Calculadora de Empréstimos</h1>
+      <form id="loanForm">
+        <div class="row">
+          <div class="col-sm-2">
+            <label for="startTime">Data Inicial</label>
+            <input type="date" class="form-control" id="startTime" />
+          </div>
+
+          <div class="col-sm-2">
+            <label for="endTime">Data Final</label>
+            <input type="date" class="form-control" id="endTime" />
+          </div>
+
+          <div class="col-sm-2">
+            <label for="firstPaymentTime">Primeiro Pagamento</label>
+            <input type="date" class="form-control" id="firstPaymentTime" />
+          </div>
+
+          <div class="col-sm-2">
+            <label for="loanAmount">Valor de Empréstimo</label>
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">R$</span>
+              </div>
+              <input type="text" class="form-control" id="loanAmount" />
+            </div>
+          </div>
+
+          <div class="col-sm-2">
+            <label for="taxRate">Taxa de Juros</label>
+            <div class="input-group">
+              <input
+                type="number"
+                class="form-control"
+                id="taxRate"
+                step=".01"
+              />
+              <div class="input-group-prepend">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-2 align-self-end">
+            <button type="submit" class="btn btn-primary">Calcular</button>
+          </div>
+        </div>
+      </form>
+      <table class="table table-bordered mt-5">
+        <thead class="table-head">
+          <tr>
+            <th scope="col" colspan="3">Empréstimo</th>
+            <th scope="col" colspan="2">Parcela</th>
+            <th scope="col" colspan="2">Principal</th>
+            <th scope="col" colspan="3">Juros</th>
+          </tr>
+          <tr>
+            <th scope="col">Data Competência</th>
+            <th scope="col">Valor de empréstimo</th>
+            <th scope="col">Saldo Devedor</th>
+            <th scope="col">Consolidada</th>
+            <th scope="col">Total</th>
+            <th scope="col">Amortização</th>
+            <th scope="col">Saldo</th>
+            <th scope="col">Provisão</th>
+            <th scope="col">Acumulado</th>
+            <th scope="col">Pago</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <!-- LOAN DATA -->
+        </tbody>
+      </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      function dateFormat(value) {
+        value = Math.abs(value)
+        return value.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })
+      }
+
+      $(document).ready(function () {
+        $('#loanForm').submit(function (event) {
+          event.preventDefault()
+          $('#table-body').empty()
+          var row = ''
+
+          var startTime = $('#startTime').val()
+          var endTime = $('#endTime').val()
+          var firstPaymentTime = $('#firstPaymentTime').val()
+          var loanAmount = $('#loanAmount').val()
+          var taxRate = $('#taxRate').val()
+
+          var errorList = []
+          if (startTime === null || startTime === '')
+            errorList.push('Data de início é obrigatório.')
+
+          if (endTime === null || endTime === '')
+            errorList.push('Data final é obrigatório.')
+
+          if (firstPaymentTime === null || firstPaymentTime === '')
+            errorList.push('Data do primeiro pagamento é obrigatório.')
+
+          if (loanAmount === null || loanAmount === '')
+            errorList.push('Valor de Empréstimo é obrigatório.')
+
+          if (taxRate === null || taxRate === '')
+            errorList.push('Taxa de Juros é obrigatório.')
+
+          if (startTime != null && endTime != null && startTime > endTime)
+            errorList.push('Data inicial deve ser inferior a data final.')
+
+          if (
+            startTime != null &&
+            firstPaymentTime != null &&
+            startTime > firstPaymentTime
+          )
+            errorList.push(
+              'Data inicial deve ser inferior a data do primeiro pagamento.'
+            )
+
+          if (loanAmount != null && loanAmount <= 0)
+            errorList.push('Valor de Empréstimo deve ser maior que 0.')
+
+          if (taxRate != null && taxRate <= 0)
+            errorList.push('Taxa de Juros deve ser maior que 0.')
+
+          if (errorList.length > 0) {
+            errorList.forEach(function (item) {
+              row += '<tr>'
+              row += `<td class="alert alert-danger" role="alert" colspan="10">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                ${item}
+                </td>`
+              row += '</tr>'
+            })
+            $('#table-body').append(row)
+            return
+          }
+
+          var formParam = {
+            startDate: new Date(startTime).getTime(),
+            endDate: new Date(endTime).getTime(),
+            firstPaymentDate: new Date(firstPaymentTime).getTime(),
+            loanAmount: loanAmount,
+            taxRate: taxRate / 100
+          }
+          $.ajax({
+            url: 'http://localhost:8080/loan/postLoanData',
+            method: 'GET',
+            data: formParam,
+            success: function (response) {
+              console.log(response.calculationDataMap)
+              Object.values(response.calculationDataMap).forEach(data => {
+                var date = new Date(data.time)
+                date.setMinutes(date.getMinutes() + date.getTimezoneOffset())
+                var day = date.getDate()
+                var month = date.getMonth() + 1
+                var year = date.getFullYear()
+                var fullDate =
+                  (day < 10 ? '0' : '') +
+                  day +
+                  '/' +
+                  (month < 10 ? '0' : '') +
+                  month +
+                  '/' +
+                  year
+                row = `<tr>
+                  <td>${fullDate}</td>
+                  <td>${dateFormat(data.loanAmount)}</td>
+                  <td>${dateFormat(data.outstandingBalance)}</td>
+                  <td>${data.paymentIndex}</td>
+                  <td>${dateFormat(data.total)}</td>
+                  <td>${dateFormat(data.amortization)}</td>
+                  <td>${dateFormat(data.balance)}</td>
+                  <td>${dateFormat(data.provision)}</td>
+                  <td>${dateFormat(data.accumulated)}</td>
+                  <td>${dateFormat(data.paid)}</td>
+                  </tr>`
+                $('#table-body').append(row)
+              })
+            },
+            error: function (err) {
+              console.error(err)
+            }
+          })
+        })
+      })
+    </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var inputElement = document.getElementById('loanAmount')
+        inputElement.addEventListener('blur', function () {
+          var inputValue = inputElement.value
+          var formattedValue = parseFloat(inputValue).toLocaleString('pt-BR')
+          inputElement.value = formattedValue
+        })
+      })
+    </script>
+  </body>
+</html>
